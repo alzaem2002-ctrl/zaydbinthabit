@@ -1,0 +1,17 @@
+{
+  "name": "osint-lab-pro",
+  "version": "1.0.0",
+  "description": "Osint lab pro hybrid pwa",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "echo 'Build process for PWA assets'",
+    "test": "echo 'No tests specified yet'"
+  },
+  "keywords": ["osint", "pwa", "lab"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {}
+}
