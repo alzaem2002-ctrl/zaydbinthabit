@@ -237,16 +237,147 @@ export default function Home() {
   };
 
   const handleExportData = () => {
-    toast({ title: "تصدير البيانات", description: "جاري تحضير البيانات للتصدير" });
+    if (!indicators || indicators.length === 0) {
+      toast({ 
+        title: "لا توجد بيانات", 
+        description: "لا توجد مؤشرات لتصديرها", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      teacher: {
+        name: `${user?.firstName || ""} ${user?.lastName || ""}`.trim(),
+        email: user?.email,
+        school: user?.schoolName,
+        department: user?.educationDepartment,
+        subject: user?.subject,
+        level: user?.educationalLevel,
+      },
+      strategies: userStrategies?.map(s => s.name) || [],
+      indicators: indicators.map(indicator => ({
+        title: indicator.title,
+        description: indicator.description,
+        status: indicator.status,
+        criteria: indicator.criteria?.map(c => ({
+          title: c.title,
+          isCompleted: c.isCompleted,
+        })) || [],
+      })),
+      statistics: {
+        totalIndicators: stats?.totalIndicators || 0,
+        completedIndicators: stats?.completedIndicators || 0,
+        pendingIndicators: stats?.pendingIndicators || 0,
+        inProgressIndicators: stats?.inProgressIndicators || 0,
+        totalWitnesses: stats?.totalWitnesses || 0,
+      },
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `performance-data-${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({ 
+      title: "تم التصدير بنجاح", 
+      description: "تم تحميل ملف البيانات" 
+    });
   };
 
   const handleImportData = () => {
-    toast({ title: "استيراد البيانات", description: "ميزة الاستيراد قيد التطوير" });
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const importData = JSON.parse(text);
+
+        if (!importData.indicators || !Array.isArray(importData.indicators)) {
+          toast({ 
+            title: "خطأ في الملف", 
+            description: "صيغة الملف غير صحيحة", 
+            variant: "destructive" 
+          });
+          return;
+        }
+
+        let successCount = 0;
+        for (const indicator of importData.indicators) {
+          try {
+            await apiRequest("POST", "/api/indicators", {
+              title: indicator.title,
+              description: indicator.description || "",
+              criteria: indicator.criteria?.map((c: any) => c.title) || [],
+            });
+            successCount++;
+          } catch (err) {
+            console.error("Failed to import indicator:", indicator.title, err);
+          }
+        }
+
+        queryClient.invalidateQueries({ queryKey: ["/api/indicators"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+
+        toast({ 
+          title: "تم الاستيراد بنجاح", 
+          description: `تم استيراد ${successCount} من ${importData.indicators.length} مؤشرات` 
+        });
+      } catch (err) {
+        toast({ 
+          title: "خطأ في القراءة", 
+          description: "فشل في قراءة الملف", 
+          variant: "destructive" 
+        });
+      }
+    };
+    input.click();
   };
 
+  const reEvaluateMutation = useMutation({
+    mutationFn: async (indicatorIds: string[]) => {
+      return apiRequest("POST", "/api/indicators/re-evaluate", { indicatorIds });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/indicators"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      toast({ 
+        title: "تم إعادة التعيين", 
+        description: "تم إعادة تعيين المعايير والشواهد للمؤشرات المختارة" 
+      });
+    },
+    onError: () => {
+      toast({ 
+        title: "خطأ", 
+        description: "فشل في إعادة التعيين", 
+        variant: "destructive" 
+      });
+    },
+  });
+
   const handleReset = () => {
-    if (confirm("هل أنت متأكد من إعادة تعيين جميع البيانات؟")) {
-      toast({ title: "إعادة تعيين", description: "تم إعادة تعيين البيانات" });
+    if (!indicators || indicators.length === 0) {
+      toast({ 
+        title: "لا توجد بيانات", 
+        description: "لا توجد مؤشرات لإعادة تعيينها", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    if (confirm("هل أنت متأكد من إعادة تعيين جميع المؤشرات؟ سيتم إعادة تعيين حالة جميع المعايير إلى غير مكتمل.")) {
+      const allIndicatorIds = indicators.map(i => i.id);
+      reEvaluateMutation.mutate(allIndicatorIds);
     }
   };
 
@@ -825,7 +956,7 @@ export default function Home() {
         onOpenChange={setPrintOpen}
         indicators={indicators || []}
         stats={currentStats}
-        user={user}
+        user={user || undefined}
         filterCompleted={printFilterCompleted}
       />
     </div>
