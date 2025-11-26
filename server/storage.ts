@@ -37,11 +37,13 @@ export interface IStorage {
   deleteIndicator(id: string): Promise<boolean>;
   
   getCriteria(indicatorId: string): Promise<Criteria[]>;
+  getCriteriaById(id: string): Promise<Criteria | undefined>;
   createCriteria(data: InsertCriteria): Promise<Criteria>;
   updateCriteria(id: string, data: Partial<InsertCriteria>): Promise<Criteria | undefined>;
   deleteCriteria(id: string): Promise<boolean>;
   
   getWitnesses(indicatorId?: string): Promise<Witness[]>;
+  getWitnessById(id: string): Promise<Witness | undefined>;
   createWitness(data: InsertWitness): Promise<Witness>;
   deleteWitness(id: string): Promise<boolean>;
   
@@ -141,6 +143,11 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(criteria).where(eq(criteria.indicatorId, indicatorId)).orderBy(criteria.order);
   }
 
+  async getCriteriaById(id: string): Promise<Criteria | undefined> {
+    const [criterion] = await db.select().from(criteria).where(eq(criteria.id, id));
+    return criterion;
+  }
+
   async createCriteria(data: InsertCriteria): Promise<Criteria> {
     const [criterion] = await db.insert(criteria).values(data).returning();
     return criterion;
@@ -165,6 +172,11 @@ export class DatabaseStorage implements IStorage {
       return db.select().from(witnesses).where(eq(witnesses.indicatorId, indicatorId));
     }
     return db.select().from(witnesses);
+  }
+
+  async getWitnessById(id: string): Promise<Witness | undefined> {
+    const [witness] = await db.select().from(witnesses).where(eq(witnesses.id, id));
+    return witness;
   }
 
   async createWitness(data: InsertWitness): Promise<Witness> {
@@ -263,7 +275,9 @@ export class DatabaseStorage implements IStorage {
     
     const capabilitiesList = await db.select().from(capabilities);
     const changesList = await db.select().from(changes);
-    const witnessesList = await db.select().from(witnesses);
+    const witnessesList = userId
+      ? await db.select().from(witnesses).where(eq(witnesses.userId, userId))
+      : await db.select().from(witnesses);
     
     const totalIndicators = indicatorsList.length;
     const completedIndicators = indicatorsList.filter(i => i.status === "completed").length;

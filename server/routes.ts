@@ -105,10 +105,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/indicators/:id", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
     try {
       const indicator = await storage.getIndicator(req.params.id);
       if (!indicator) {
         return res.status(404).json({ message: "Indicator not found" });
+      }
+      if (indicator.userId !== user.claims.sub) {
+        return res.status(403).json({ message: "Access denied" });
       }
       res.json(indicator);
     } catch (error) {
@@ -118,11 +122,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.patch("/api/indicators/:id", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
     try {
-      const updated = await storage.updateIndicator(req.params.id, req.body);
-      if (!updated) {
+      const indicator = await storage.getIndicator(req.params.id);
+      if (!indicator) {
         return res.status(404).json({ message: "Indicator not found" });
       }
+      if (indicator.userId !== user.claims.sub) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      const { title, description, status, order } = req.body;
+      const safeUpdate: { title?: string; description?: string; status?: string; order?: number } = {};
+      if (title !== undefined) safeUpdate.title = title;
+      if (description !== undefined) safeUpdate.description = description;
+      if (status !== undefined) safeUpdate.status = status;
+      if (order !== undefined) safeUpdate.order = order;
+      
+      const updated = await storage.updateIndicator(req.params.id, safeUpdate);
       res.json(updated);
     } catch (error) {
       console.error("Error updating indicator:", error);
@@ -131,7 +147,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/indicators/:id", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
     try {
+      const indicator = await storage.getIndicator(req.params.id);
+      if (!indicator) {
+        return res.status(404).json({ message: "Indicator not found" });
+      }
+      if (indicator.userId !== user.claims.sub) {
+        return res.status(403).json({ message: "Access denied" });
+      }
       await storage.deleteIndicator(req.params.id);
       res.json({ success: true });
     } catch (error) {
@@ -141,13 +165,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.patch("/api/indicators/:indicatorId/criteria/:criteriaId", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
     try {
-      const { isCompleted } = req.body;
-      const updated = await storage.updateCriteria(req.params.criteriaId, { isCompleted });
-      
-      if (!updated) {
+      const indicator = await storage.getIndicator(req.params.indicatorId);
+      if (!indicator) {
+        return res.status(404).json({ message: "Indicator not found" });
+      }
+      if (indicator.userId !== user.claims.sub) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const criterion = await storage.getCriteriaById(req.params.criteriaId);
+      if (!criterion) {
         return res.status(404).json({ message: "Criteria not found" });
       }
+      if (criterion.indicatorId !== req.params.indicatorId) {
+        return res.status(403).json({ message: "Criteria does not belong to this indicator" });
+      }
+
+      const { isCompleted } = req.body;
+      const updated = await storage.updateCriteria(req.params.criteriaId, { isCompleted });
 
       const allCriteria = await storage.getCriteria(req.params.indicatorId);
       const allCompleted = allCriteria.every(c => c.isCompleted);
@@ -170,7 +207,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/indicators/:id/witnesses", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
     try {
+      const indicator = await storage.getIndicator(req.params.id);
+      if (!indicator) {
+        return res.status(404).json({ message: "Indicator not found" });
+      }
+      if (indicator.userId !== user.claims.sub) {
+        return res.status(403).json({ message: "Access denied" });
+      }
       const witnesses = await storage.getWitnesses(req.params.id);
       res.json(witnesses);
     } catch (error) {
@@ -182,7 +227,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/indicators/:id/witnesses", isAuthenticated, async (req, res) => {
     const user = req.user as any;
     try {
+      const indicator = await storage.getIndicator(req.params.id);
+      if (!indicator) {
+        return res.status(404).json({ message: "Indicator not found" });
+      }
+      if (indicator.userId !== user.claims.sub) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
       const { title, description, criteriaId, fileType } = req.body;
+      
+      if (criteriaId) {
+        const criterion = await storage.getCriteriaById(criteriaId);
+        if (!criterion) {
+          return res.status(404).json({ message: "Criteria not found" });
+        }
+        if (criterion.indicatorId !== req.params.id) {
+          return res.status(400).json({ message: "Criteria does not belong to this indicator" });
+        }
+      }
       
       const witness = await storage.createWitness({
         title,
@@ -201,7 +264,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/witnesses/:id", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
     try {
+      const witness = await storage.getWitnessById(req.params.id);
+      if (!witness) {
+        return res.status(404).json({ message: "Witness not found" });
+      }
+      if (witness.userId !== user.claims.sub) {
+        return res.status(403).json({ message: "Access denied" });
+      }
       await storage.deleteWitness(req.params.id);
       res.json({ success: true });
     } catch (error) {
@@ -270,11 +341,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/indicators/re-evaluate", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
     try {
       const { indicatorIds } = req.body;
       
       if (!Array.isArray(indicatorIds) || indicatorIds.length === 0) {
         return res.status(400).json({ message: "indicatorIds must be a non-empty array" });
+      }
+      
+      for (const id of indicatorIds) {
+        const indicator = await storage.getIndicator(id);
+        if (!indicator) {
+          return res.status(404).json({ message: `Indicator ${id} not found` });
+        }
+        if (indicator.userId !== user.claims.sub) {
+          return res.status(403).json({ message: "Access denied" });
+        }
       }
       
       await storage.reEvaluateIndicators(indicatorIds);
