@@ -12,6 +12,7 @@ import { AddWitnessModal } from "@/components/add-witness-modal";
 import { StrategiesModal } from "@/components/strategies-modal";
 import { ReEvaluateModal } from "@/components/re-evaluate-modal";
 import { IndicatorDetailsModal } from "@/components/indicator-details-modal";
+import { PrintReportModal } from "@/components/print-report-modal";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ export default function Home() {
   const [strategiesOpen, setStrategiesOpen] = useState(false);
   const [reEvaluateOpen, setReEvaluateOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [printOpen, setPrintOpen] = useState(false);
   const [selectedIndicatorId, setSelectedIndicatorId] = useState<string | null>(null);
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
@@ -200,7 +202,7 @@ export default function Home() {
   };
 
   const handlePrintReport = () => {
-    window.print();
+    setPrintOpen(true);
     toast({
       title: "طباعة التقرير",
       description: "جاري تحضير التقرير للطباعة",
@@ -366,6 +368,14 @@ export default function Home() {
         indicator={selectedIndicator || null}
         witnesses={selectedIndicatorWitnesses}
         onAddWitness={handleAddWitness}
+      />
+
+      <PrintReportModal 
+        open={printOpen}
+        onOpenChange={setPrintOpen}
+        indicators={indicators || []}
+        stats={stats || defaultStats}
+        user={user}
       />
     </div>
   );
