@@ -544,6 +544,14 @@ export default function Home() {
               استيراد البيانات
             </Button>
             <Button 
+              onClick={() => setStrategiesOpen(true)}
+              className="gap-2 bg-purple-600 hover:bg-purple-700"
+              data-testid="button-strategies"
+            >
+              <Lightbulb className="h-4 w-4" />
+              استراتيجيات التدريس
+            </Button>
+            <Button 
               onClick={handleReset}
               variant="destructive"
               className="gap-2"
