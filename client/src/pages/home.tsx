@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AddIndicatorModal } from "@/components/add-indicator-modal";
@@ -176,6 +177,19 @@ export default function Home() {
     },
     onError: () => {
       toast({ title: "خطأ", description: "فشل في حفظ البيانات", variant: "destructive" });
+    },
+  });
+
+  const toggleCriteriaMutation = useMutation({
+    mutationFn: async ({ indicatorId, criteriaId, isCompleted }: { indicatorId: string; criteriaId: string; isCompleted: boolean }) => {
+      return apiRequest("PATCH", `/api/indicators/${indicatorId}/criteria/${criteriaId}`, { isCompleted });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/indicators"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+    },
+    onError: () => {
+      toast({ title: "خطأ", description: "فشل في تحديث المعيار", variant: "destructive" });
     },
   });
 
@@ -708,16 +722,25 @@ export default function Home() {
                         {/* Criteria List */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {indicator.criteria?.map((criterion, idx) => (
-                            <Card key={criterion.id} className="p-4 bg-muted/30" data-testid={`criterion-${criterion.id}`}>
+                            <Card 
+                              key={criterion.id} 
+                              className={`p-4 ${criterion.isCompleted ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' : 'bg-muted/30'}`} 
+                              data-testid={`criterion-${criterion.id}`}
+                            >
                               <div className="flex items-start justify-between gap-4">
-                                <div className="flex gap-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    data-testid={`button-delete-criterion-${criterion.id}`}
-                                  >
-                                    حذف
-                                  </Button>
+                                <div className="flex gap-2 items-center">
+                                  <Checkbox
+                                    checked={criterion.isCompleted || false}
+                                    onCheckedChange={(checked) => 
+                                      toggleCriteriaMutation.mutate({
+                                        indicatorId: indicator.id,
+                                        criteriaId: criterion.id,
+                                        isCompleted: checked as boolean
+                                      })
+                                    }
+                                    data-testid={`checkbox-criterion-${criterion.id}`}
+                                    className="h-5 w-5"
+                                  />
                                   <Button
                                     onClick={() => handleAddWitness(indicator.id, criterion.id)}
                                     size="sm"
@@ -729,7 +752,14 @@ export default function Home() {
                                   </Button>
                                 </div>
                                 <div className="text-right flex-1">
-                                  <span className="font-medium">{idx + 1}. {criterion.title}</span>
+                                  <span className={`font-medium ${criterion.isCompleted ? 'line-through text-muted-foreground' : ''}`}>
+                                    {idx + 1}. {criterion.title}
+                                  </span>
+                                  {criterion.isCompleted && (
+                                    <Badge variant="secondary" className="mr-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                                      مكتمل
+                                    </Badge>
+                                  )}
                                 </div>
                               </div>
                             </Card>
