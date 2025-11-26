@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Save, Upload } from "lucide-react";
+import { Save, Upload, X } from "lucide-react";
 import type { Criteria } from "@shared/schema";
 
 const witnessFormSchema = z.object({
@@ -33,6 +34,7 @@ const witnessFormSchema = z.object({
   description: z.string().optional(),
   criteriaId: z.string().optional(),
   fileType: z.string().optional(),
+  fileName: z.string().optional(),
 });
 
 type WitnessFormValues = z.infer<typeof witnessFormSchema>;
@@ -55,6 +57,9 @@ export function AddWitnessModal({
   criteria,
   isLoading 
 }: AddWitnessModalProps) {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const form = useForm<WitnessFormValues>({
     resolver: zodResolver(witnessFormSchema),
     defaultValues: {
@@ -62,17 +67,51 @@ export function AddWitnessModal({
       description: "",
       criteriaId: "",
       fileType: "",
+      fileName: "",
     },
   });
 
   const handleSubmit = (data: WitnessFormValues) => {
-    onSubmit(data);
+    const submitData = {
+      ...data,
+      fileName: selectedFile?.name || data.fileName,
+    };
+    onSubmit(submitData);
     form.reset();
+    setSelectedFile(null);
   };
 
   const handleClose = () => {
     form.reset();
+    setSelectedFile(null);
     onOpenChange(false);
+  };
+
+  const handleFileSelect = (file: File) => {
+    setSelectedFile(file);
+    if (file.type.includes('pdf')) {
+      form.setValue('fileType', 'pdf');
+    } else if (file.type.includes('image')) {
+      form.setValue('fileType', 'image');
+    } else if (file.type.includes('video')) {
+      form.setValue('fileType', 'video');
+    } else {
+      form.setValue('fileType', 'document');
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
   };
 
   return (
