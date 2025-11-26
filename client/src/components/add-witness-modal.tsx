@@ -1,0 +1,217 @@
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Save, Upload } from "lucide-react";
+import type { Criteria } from "@shared/schema";
+
+const witnessFormSchema = z.object({
+  title: z.string().min(3, "عنوان الشاهد يجب أن يكون 3 أحرف على الأقل"),
+  description: z.string().optional(),
+  criteriaId: z.string().optional(),
+  fileType: z.string().optional(),
+});
+
+type WitnessFormValues = z.infer<typeof witnessFormSchema>;
+
+interface AddWitnessModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: WitnessFormValues) => void;
+  indicatorId: string;
+  indicatorTitle?: string;
+  criteria?: Criteria[];
+  isLoading?: boolean;
+}
+
+export function AddWitnessModal({ 
+  open, 
+  onOpenChange, 
+  onSubmit,
+  indicatorTitle,
+  criteria,
+  isLoading 
+}: AddWitnessModalProps) {
+  const form = useForm<WitnessFormValues>({
+    resolver: zodResolver(witnessFormSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      criteriaId: "",
+      fileType: "",
+    },
+  });
+
+  const handleSubmit = (data: WitnessFormValues) => {
+    onSubmit(data);
+    form.reset();
+  };
+
+  const handleClose = () => {
+    form.reset();
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="modal-add-witness">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-primary" data-testid="text-witness-modal-title">
+            إضافة شاهد جديد
+          </DialogTitle>
+          {indicatorTitle && (
+            <p className="text-sm text-muted-foreground mt-1">
+              للمؤشر: {indicatorTitle}
+            </p>
+          )}
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-bold text-primary">عنوان الشاهد</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="أدخل عنوان الشاهد" 
+                      {...field}
+                      data-testid="input-witness-title"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-bold text-primary">الوصف (اختياري)</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="أدخل وصف الشاهد" 
+                      {...field}
+                      className="resize-none"
+                      rows={3}
+                      data-testid="input-witness-description"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {criteria && criteria.length > 0 && (
+              <FormField
+                control={form.control}
+                name="criteriaId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-bold text-primary">المعيار المرتبط (اختياري)</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-criteria">
+                          <SelectValue placeholder="اختر المعيار" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {criteria.map((c) => (
+                          <SelectItem key={c.id} value={c.id} data-testid={`option-criteria-${c.id}`}>
+                            {c.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <FormField
+              control={form.control}
+              name="fileType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-bold text-primary">نوع الملف (اختياري)</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-file-type">
+                        <SelectValue placeholder="اختر نوع الملف" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="pdf">ملف PDF</SelectItem>
+                      <SelectItem value="image">صورة</SelectItem>
+                      <SelectItem value="video">فيديو</SelectItem>
+                      <SelectItem value="document">مستند</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center bg-muted/30">
+              <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground mb-2">
+                اسحب الملف هنا أو انقر للاختيار
+              </p>
+              <Button type="button" variant="outline" size="sm" data-testid="button-upload-file">
+                اختر ملف
+              </Button>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button 
+                type="submit" 
+                className="flex-1 gap-2"
+                disabled={isLoading}
+                data-testid="button-save-witness"
+              >
+                <Save className="h-4 w-4" />
+                {isLoading ? "جاري الحفظ..." : "حفظ الشاهد"}
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleClose}
+                data-testid="button-cancel-witness"
+              >
+                إلغاء
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
