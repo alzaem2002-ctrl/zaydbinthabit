@@ -219,14 +219,55 @@ export function AddWitnessModal({
               )}
             />
 
-            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center bg-muted/30">
+            <div 
+              className="border-2 border-dashed border-border rounded-lg p-6 text-center bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              data-testid="drop-zone-file"
+            >
               <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
               <p className="text-sm text-muted-foreground mb-2">
-                اسحب الملف هنا أو انقر للاختيار
+                {selectedFile ? `الملف المختار: ${selectedFile.name}` : "اسحب الملف هنا أو انقر للاختيار"}
               </p>
-              <Button type="button" variant="outline" size="sm" data-testid="button-upload-file">
+              {selectedFile && (
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 text-xs text-destructive hover:text-destructive/80 mb-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedFile(null);
+                  }}
+                  data-testid="button-clear-file"
+                >
+                  <X className="h-3 w-3" />
+                  إزالة الملف
+                </button>
+              )}
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
+                data-testid="button-upload-file"
+              >
+                <Upload className="h-4 w-4 ml-2" />
                 اختر ملف
               </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    handleFileSelect(e.target.files[0]);
+                  }
+                }}
+                data-testid="input-file-upload"
+              />
             </div>
 
             <div className="flex gap-3 pt-4">
