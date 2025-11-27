@@ -52,7 +52,8 @@ import {
   Presentation,
   TrendingUp,
   Layers,
-  Star
+  Star,
+  LogOut
 } from "lucide-react";
 
 const educationalLevels = [
@@ -705,6 +706,16 @@ export default function Home() {
               <RotateCcw className="h-4 w-4" />
               إعادة تعيين
             </Button>
+            <a href="/api/logout">
+              <Button 
+                variant="outline"
+                className="gap-2"
+                data-testid="button-logout"
+              >
+                <LogOut className="h-4 w-4" />
+                تسجيل الخروج
+              </Button>
+            </a>
           </div>
         </Card>
 
