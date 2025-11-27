@@ -25,8 +25,11 @@ The application is fully implemented with complete frontend, backend, database, 
    - 18 strategies, 12 capabilities, 12 changes pre-seeded
 
 3. **Multi-Role System**
+   - **Creator Role** (منشئ الموقع): Site-wide user management, assign any role to users, all principal permissions
+   - **Principal/Admin Role**: View all teachers, approve/reject indicators, school-wide statistics
+   - **Supervisor Role**: Future expansion for department oversight
    - **Teacher Role**: Create indicators, manage criteria, add witnesses, submit for approval
-   - **Principal Role**: View all teachers, approve/reject indicators, school-wide statistics
+   - Role hierarchy: creator > admin > supervisor > teacher
    - Automatic role-based routing
    - Data isolation between teachers
 
