@@ -146,10 +146,10 @@ export default function Landing() {
       <footer className="border-t border-border py-8 px-4">
         <div className="max-w-6xl mx-auto text-center">
           <p className="text-muted-foreground" data-testid="text-footer">
-            جميع الحقوق محفوظة © 2024 - مدرسة زيد بن ثابت الابتدائية
+            نظام توثيق شواهد الأداء الوظيفي
           </p>
           <p className="text-sm text-muted-foreground mt-2">
-            توثيق شواهد الأداء الوظيفي - نظام إلكتروني متكامل
+            نظام إلكتروني متكامل لتوثيق الأداء المهني
           </p>
           <p className="text-sm text-muted-foreground mt-4 font-medium">
             الصفحة من إعداد عبدالعزيز الخلفان

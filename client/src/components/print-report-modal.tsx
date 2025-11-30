@@ -22,10 +22,10 @@ export function PrintReportModal({
 }: PrintReportModalProps) {
   const principalName = user?.firstName && user?.lastName 
     ? `${user.firstName} ${user.lastName}`
-    : "زياد العتيبي";
+    : "غير محدد";
 
-  const schoolName = user?.schoolName || "مدرسة زيد بن ثابت الابتدائية";
-  const department = user?.educationDepartment || "إدارة التعليم بالأحساء";
+  const schoolName = user?.schoolName || "غير محدد";
+  const department = user?.educationDepartment || "غير محدد";
   
   const filteredIndicators = filterCompleted 
     ? indicators.filter(i => i.status === "completed")

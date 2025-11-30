@@ -119,7 +119,7 @@ export default function Login() {
             </div>
             <div>
               <h1 className="font-bold text-foreground">توثيق الأداء الوظيفي</h1>
-              <p className="text-xs text-muted-foreground">مدرسة زيد بن ثابت الابتدائية</p>
+              <p className="text-xs text-muted-foreground">نظام إلكتروني متكامل</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -267,7 +267,7 @@ export default function Login() {
       <footer className="border-t border-border py-6 px-4 mt-auto">
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-sm text-muted-foreground">
-            مدرسة زيد بن ثابت الابتدائية - نظام توثيق شواهد الأداء الوظيفي
+            نظام توثيق شواهد الأداء الوظيفي - نظام إلكتروني متكامل
           </p>
           <p className="text-sm text-muted-foreground mt-2 font-medium">
             الصفحة من إعداد عبدالعزيز الخلفان

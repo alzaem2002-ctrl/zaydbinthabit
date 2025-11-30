@@ -15,9 +15,9 @@ interface HeaderProps {
 export function Header({ stats, user }: HeaderProps) {
   const principalName = user?.firstName && user?.lastName 
     ? `${user.firstName} ${user.lastName}`
-    : "زياد العتيبي";
+    : "غير محدد";
     
-  const schoolName = user?.schoolName || "مدرسة زيد بن ثابت الابتدائية";
+  const schoolName = user?.schoolName || "غير محدد";
 
   return (
     <Card className="p-6 border-r-4 border-r-primary shadow-sm" data-testid="header-section">

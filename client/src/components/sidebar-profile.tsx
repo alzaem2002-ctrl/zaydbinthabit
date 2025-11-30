@@ -34,16 +34,16 @@ export function SidebarProfile({
 }: SidebarProfileProps) {
   const displayName = user?.firstName && user?.lastName 
     ? `الأستاذ / ${user.firstName} ${user.lastName}`
-    : "الأستاذ / زياد العتيبي";
+    : "غير محدد";
     
-  const schoolName = user?.schoolName || "مدرسة زيد بن ثابت الابتدائية";
-  const department = user?.educationDepartment || "إدارة التعليم بالأحساء";
-  const email = user?.email || user?.contactEmail || "z.alotaibi@school.edu.sa";
-  const yearsOfService = user?.yearsOfService || 15;
+  const schoolName = user?.schoolName || "غير محدد";
+  const department = user?.educationDepartment || "غير محدد";
+  const email = user?.email || user?.contactEmail || "غير محدد";
+  const yearsOfService = user?.yearsOfService || 0;
   
   const initials = user?.firstName && user?.lastName 
     ? `${user.firstName[0]}${user.lastName[0]}`
-    : "زع";
+    : "؟";
 
   return (
     <Card className="p-6 shadow-sm h-fit sticky top-4" data-testid="sidebar-profile">

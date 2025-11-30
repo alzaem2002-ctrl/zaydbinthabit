@@ -982,10 +982,10 @@ export default function Home() {
         {/* Footer */}
         <footer className="text-center py-8 border-t border-border" data-testid="footer">
           <p className="text-muted-foreground">
-            جميع الحقوق محفوظة © 2024 - مدرسة زيد بن ثابت الابتدائية
+            نظام توثيق شواهد الأداء الوظيفي
           </p>
           <p className="text-sm text-muted-foreground mt-2">
-            توثيق شواهد الأداء الوظيفي - نظام إلكتروني متكامل
+            نظام إلكتروني متكامل لتوثيق الأداء المهني
           </p>
           <p className="text-sm text-muted-foreground mt-4 font-medium">
             الصفحة من إعداد عبدالعزيز الخلفان
