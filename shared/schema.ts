@@ -36,6 +36,7 @@ export const users = pgTable("users", {
   schoolName: varchar("school_name"),
   educationDepartment: varchar("education_department"),
   subject: varchar("subject"),
+  principalName: varchar("principal_name"),
   yearsOfService: integer("years_of_service"),
   contactEmail: varchar("contact_email"),
   createdAt: timestamp("created_at").defaultNow(),

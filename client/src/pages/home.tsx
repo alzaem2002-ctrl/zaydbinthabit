@@ -232,7 +232,7 @@ export default function Home() {
       educationDepartment: user?.educationDepartment || "",
       subject: user?.subject || "",
       educationalLevel: user?.educationalLevel || "معلم",
-      principalName: "",
+      principalName: user?.principalName || "",
       yearsOfService: user?.yearsOfService?.toString() || "",
       contactEmail: user?.contactEmail || "",
     });
@@ -247,6 +247,7 @@ export default function Home() {
       educationDepartment: profileForm.educationDepartment,
       subject: profileForm.subject,
       educationalLevel: profileForm.educationalLevel,
+      principalName: profileForm.principalName,
       yearsOfService: profileForm.yearsOfService ? parseInt(profileForm.yearsOfService) : undefined,
       contactEmail: profileForm.contactEmail,
     });
@@ -655,7 +656,7 @@ export default function Home() {
                   <span className="font-medium">مدير/ة المدرسة</span>
                 </div>
                 <div className="text-muted-foreground" data-testid="display-principal">
-                  غير محدد
+                  {user?.principalName || "غير محدد"}
                 </div>
               </Card>
               <Card className="p-4 bg-muted/50">
