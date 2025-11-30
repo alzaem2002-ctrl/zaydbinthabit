@@ -31,6 +31,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  password: varchar("password"),
   role: varchar("role", { length: 50 }).default("teacher"), // creator, admin, supervisor, teacher
   educationalLevel: varchar("educational_level", { length: 50 }).default("معلم"), // معلم, معلم ممارس, معلم متقدم, معلم خبير
   schoolName: varchar("school_name"),

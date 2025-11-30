@@ -51,6 +51,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lastName,
           email: `${uniqueId}@school.local`,
           role: "teacher",
+          schoolName: "زيد بن ثابت الابتدائية",
+          principalName: "زياد عبدالمحسن العتيبي",
         });
 
         // Seed default indicators for new teacher
@@ -86,10 +88,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const uniqueId = `admin_${randomBytes(8).toString("hex")}`;
           adminUser = await storage.upsertUser({
             id: uniqueId,
-            firstName: "مدير",
-            lastName: "المدرسة",
+            firstName: "زياد",
+            lastName: "عبدالمحسن العتيبي",
             email: `admin@school.local`,
             role: "admin",
+            schoolName: "زيد بن ثابت الابتدائية",
+            principalName: "زياد عبدالمحسن العتيبي",
           });
         }
 
@@ -790,6 +794,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching creator stats:", error);
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Principal/Creator: Delete a teacher
+  app.delete("/api/principal/teachers/:userId", isAuthenticated, isPrincipal, async (req, res) => {
+    try {
+      const targetUser = await storage.getUser(req.params.userId);
+      
+      if (!targetUser) {
+        return res.status(404).json({ message: "المستخدم غير موجود" });
+      }
+      
+      // Only allow deleting teachers (not admins or creators)
+      if (targetUser.role !== "teacher") {
+        return res.status(403).json({ message: "لا يمكن حذف هذا المستخدم" });
+      }
+      
+      await storage.deleteUser(req.params.userId);
+      res.json({ success: true, message: "تم حذف المعلم بنجاح" });
+    } catch (error) {
+      console.error("Error deleting teacher:", error);
+      res.status(500).json({ message: "حدث خطأ أثناء حذف المعلم" });
+    }
+  });
+
+  // Principal/Creator: Change teacher password
+  app.patch("/api/principal/teachers/:userId/password", isAuthenticated, isPrincipal, async (req, res) => {
+    try {
+      const { password } = req.body;
+      
+      if (!password || password.length < 4) {
+        return res.status(400).json({ message: "كلمة المرور يجب أن تكون 4 أحرف على الأقل" });
+      }
+      
+      const targetUser = await storage.getUser(req.params.userId);
+      
+      if (!targetUser) {
+        return res.status(404).json({ message: "المستخدم غير موجود" });
+      }
+      
+      // Only allow changing password for teachers
+      if (targetUser.role !== "teacher") {
+        return res.status(403).json({ message: "لا يمكن تغيير كلمة مرور هذا المستخدم" });
+      }
+      
+      const updated = await storage.updateUserPassword(req.params.userId, password);
+      res.json({ success: true, message: "تم تغيير كلمة المرور بنجاح" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      res.status(500).json({ message: "حدث خطأ أثناء تغيير كلمة المرور" });
+    }
+  });
+
+  // Creator: Delete any user (including admins)
+  app.delete("/api/creator/users/:userId", isAuthenticated, isCreator, async (req, res) => {
+    try {
+      const currentUserId = await getUserIdFromRequest(req);
+      
+      // Cannot delete yourself
+      if (req.params.userId === currentUserId) {
+        return res.status(403).json({ message: "لا يمكنك حذف حسابك الخاص" });
+      }
+      
+      const targetUser = await storage.getUser(req.params.userId);
+      
+      if (!targetUser) {
+        return res.status(404).json({ message: "المستخدم غير موجود" });
+      }
+      
+      await storage.deleteUser(req.params.userId);
+      res.json({ success: true, message: "تم حذف المستخدم بنجاح" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "حدث خطأ أثناء حذف المستخدم" });
+    }
+  });
+
+  // Creator: Change any user password
+  app.patch("/api/creator/users/:userId/password", isAuthenticated, isCreator, async (req, res) => {
+    try {
+      const { password } = req.body;
+      
+      if (!password || password.length < 4) {
+        return res.status(400).json({ message: "كلمة المرور يجب أن تكون 4 أحرف على الأقل" });
+      }
+      
+      const targetUser = await storage.getUser(req.params.userId);
+      
+      if (!targetUser) {
+        return res.status(404).json({ message: "المستخدم غير موجود" });
+      }
+      
+      const updated = await storage.updateUserPassword(req.params.userId, password);
+      res.json({ success: true, message: "تم تغيير كلمة المرور بنجاح" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      res.status(500).json({ message: "حدث خطأ أثناء تغيير كلمة المرور" });
     }
   });
 

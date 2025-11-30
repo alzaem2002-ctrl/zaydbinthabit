@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -29,7 +30,9 @@ import {
   Sun,
   Shield,
   Crown,
-  UserCog
+  UserCog,
+  Trash2,
+  KeyRound
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { 
@@ -48,6 +51,11 @@ export default function PrincipalDashboard() {
   const [approvalNotes, setApprovalNotes] = useState("");
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [approvalAction, setApprovalAction] = useState<"approve" | "reject">("approve");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [teacherToDelete, setTeacherToDelete] = useState<TeacherWithStats | null>(null);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [teacherToChangePassword, setTeacherToChangePassword] = useState<TeacherWithStats | null>(null);
+  const [newPassword, setNewPassword] = useState("");
 
   const { data: user } = useQuery<UserType>({
     queryKey: ["/api/user"],
@@ -132,6 +140,62 @@ export default function PrincipalDashboard() {
       toast({
         title: "خطأ",
         description: "فشل في تغيير الصلاحية",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete teacher mutation
+  const deleteTeacherMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const endpoint = user?.role === "creator" 
+        ? `/api/creator/users/${userId}` 
+        : `/api/principal/teachers/${userId}`;
+      return apiRequest("DELETE", endpoint);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/principal/teachers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/creator/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/principal/stats"] });
+      toast({
+        title: "تم الحذف",
+        description: "تم حذف المعلم بنجاح",
+      });
+      setDeleteConfirmOpen(false);
+      setTeacherToDelete(null);
+    },
+    onError: () => {
+      toast({
+        title: "خطأ",
+        description: "فشل في حذف المعلم",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Change password mutation
+  const changePasswordMutation = useMutation({
+    mutationFn: async ({ userId, password }: { userId: string; password: string }) => {
+      const endpoint = user?.role === "creator"
+        ? `/api/creator/users/${userId}/password`
+        : `/api/principal/teachers/${userId}/password`;
+      return apiRequest("PATCH", endpoint, { password });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/principal/teachers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/creator/users"] });
+      toast({
+        title: "تم التحديث",
+        description: "تم تغيير كلمة المرور بنجاح",
+      });
+      setPasswordModalOpen(false);
+      setNewPassword("");
+      setTeacherToChangePassword(null);
+    },
+    onError: () => {
+      toast({
+        title: "خطأ",
+        description: "فشل في تغيير كلمة المرور",
         variant: "destructive",
       });
     },
@@ -465,6 +529,34 @@ export default function PrincipalDashboard() {
                             {teacher.pendingApprovalCount > 0 && (
                               <Badge variant="secondary">{teacher.pendingApprovalCount}</Badge>
                             )}
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTeacherToChangePassword(teacher);
+                                  setPasswordModalOpen(true);
+                                }}
+                                data-testid={`button-change-password-${teacher.id}`}
+                              >
+                                <KeyRound className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTeacherToDelete(teacher);
+                                  setDeleteConfirmOpen(true);
+                                }}
+                                data-testid={`button-delete-teacher-${teacher.id}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                             <ChevronLeft className="h-4 w-4 text-muted-foreground" />
                           </div>
                         </div>
@@ -693,6 +785,114 @@ export default function PrincipalDashboard() {
                 : approvalAction === "approve"
                 ? "تأكيد الاعتماد"
                 : "تأكيد الرفض"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-5 w-5" />
+              تأكيد حذف المعلم
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-muted-foreground">
+              هل أنت متأكد من حذف المعلم{" "}
+              <strong className="text-foreground">
+                {teacherToDelete?.firstName} {teacherToDelete?.lastName}
+              </strong>
+              ؟
+            </p>
+            <p className="text-sm text-destructive mt-2">
+              سيتم حذف جميع بيانات المعلم بما في ذلك المؤشرات والشواهد. لا يمكن التراجع عن هذا الإجراء.
+            </p>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                setTeacherToDelete(null);
+              }}
+              data-testid="button-cancel-delete"
+            >
+              إلغاء
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (teacherToDelete) {
+                  deleteTeacherMutation.mutate(teacherToDelete.id);
+                }
+              }}
+              disabled={deleteTeacherMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteTeacherMutation.isPending ? "جاري الحذف..." : "تأكيد الحذف"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Password Modal */}
+      <Dialog open={passwordModalOpen} onOpenChange={setPasswordModalOpen}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-primary" />
+              تغيير كلمة المرور
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">المعلم:</p>
+              <p className="font-medium">
+                {teacherToChangePassword?.firstName} {teacherToChangePassword?.lastName}
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">كلمة المرور الجديدة</label>
+              <Input
+                type="text"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="أدخل كلمة المرور الجديدة"
+                data-testid="input-new-password"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                يجب أن تكون كلمة المرور 4 أحرف على الأقل
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPasswordModalOpen(false);
+                setNewPassword("");
+                setTeacherToChangePassword(null);
+              }}
+              data-testid="button-cancel-password"
+            >
+              إلغاء
+            </Button>
+            <Button
+              onClick={() => {
+                if (teacherToChangePassword && newPassword.length >= 4) {
+                  changePasswordMutation.mutate({
+                    userId: teacherToChangePassword.id,
+                    password: newPassword,
+                  });
+                }
+              }}
+              disabled={changePasswordMutation.isPending || newPassword.length < 4}
+              data-testid="button-confirm-password"
+            >
+              {changePasswordMutation.isPending ? "جاري التحديث..." : "تغيير كلمة المرور"}
             </Button>
           </DialogFooter>
         </DialogContent>

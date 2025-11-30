@@ -79,6 +79,8 @@ export interface IStorage {
   // Creator methods (site management)
   getAllUsers(): Promise<User[]>;
   updateUserRole(userId: string, role: string): Promise<User | undefined>;
+  deleteUser(userId: string): Promise<boolean>;
+  updateUserPassword(userId: string, password: string): Promise<User | undefined>;
   
   // Custom auth methods
   findTeacherByName(firstName: string, lastName: string): Promise<User | undefined>;
@@ -487,6 +489,36 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db
       .update(users)
       .set({ role, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return updated;
+  }
+
+  async deleteUser(userId: string): Promise<boolean> {
+    // Delete all related data first (cascade)
+    // Delete signatures
+    await db.delete(signatures).where(eq(signatures.teacherId, userId));
+    // Delete user strategies
+    await db.delete(userStrategies).where(eq(userStrategies.userId, userId));
+    // Get all indicators for user
+    const userIndicators = await db.select().from(indicators).where(eq(indicators.userId, userId));
+    for (const indicator of userIndicators) {
+      // Delete witnesses for each indicator
+      await db.delete(witnesses).where(eq(witnesses.indicatorId, indicator.id));
+      // Delete criteria for each indicator
+      await db.delete(criteria).where(eq(criteria.indicatorId, indicator.id));
+    }
+    // Delete all indicators for user
+    await db.delete(indicators).where(eq(indicators.userId, userId));
+    // Finally delete the user
+    const result = await db.delete(users).where(eq(users.id, userId));
+    return true;
+  }
+
+  async updateUserPassword(userId: string, password: string): Promise<User | undefined> {
+    const [updated] = await db
+      .update(users)
+      .set({ password, updatedAt: new Date() })
       .where(eq(users.id, userId))
       .returning();
     return updated;
