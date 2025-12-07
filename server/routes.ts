@@ -7,6 +7,16 @@ import { randomBytes } from "crypto";
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
   
+  // Health check endpoint - doesn't require database
+  app.get("/api/health", (_req, res) => {
+    res.json({ 
+      status: "ok", 
+      timestamp: new Date().toISOString(),
+      version: "1.0.0",
+      service: "School Performance Documentation System"
+    });
+  });
+  
   // Custom login endpoint for role-based authentication
   app.post("/api/auth/login", async (req, res) => {
     try {
