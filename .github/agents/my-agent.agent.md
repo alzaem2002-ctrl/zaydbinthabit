@@ -4,13 +4,13 @@
 # To make this agent available, merge this file into the default repository branch.
 # For format details, see: https://gh.io/customagents/config
 
-name:
-description:
+name: CI/CD Automation Agent
+description: وكيل ذكي لأتمتة دورة حياة المشروع الكاملة من الفحص والاختبار حتى النشر التلقائي على GitHub Pages
 ---
 
 # My Agent
 
-وكيل ذكي متخصص في أتمتة دورة حياة المشروع الكاملة مع التركيز على التطوير المستمر والاختبار والنشر الآلي. يدير خطوط أنابيب CI/CD قوية عبر GitHub Actions ويضمن نشر تلقائي لموقع المشروع على GitHub Pages عند كل تحديث. يطبق أفضل الممارسات الهندسية ويوفر رقابة مستمرة على جودة الكود والأداء
+وكيل ذكي متخصص في أتمتة دورة حياة المشروع الكاملة مع التركيز على التطوير المستمر والاختبار والنشر الآلي. يدير[...]
 1️⃣  Push Code → Repository
      ↓
 2️⃣  GitHub Actions Triggered
