@@ -5,7 +5,7 @@ import * as schema from "@shared/schema";
 
 neonConfig.webSocketConstructor = ws;
 
-if (!process.env.DATABASE_URL) {
+function logDatabaseUrlError(): never {
   console.error("\n❌ DATABASE_URL environment variable is not set!");
   console.error("\n📋 Deployment Checklist:");
   console.error("   1. Create a database on Neon.tech (https://neon.tech)");
@@ -19,6 +19,10 @@ if (!process.env.DATABASE_URL) {
   throw new Error(
     "DATABASE_URL must be set. Did you forget to provision a database?",
   );
+}
+
+if (!process.env.DATABASE_URL) {
+  logDatabaseUrlError();
 }
 
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });

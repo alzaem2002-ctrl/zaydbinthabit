@@ -3,6 +3,13 @@ import type { Express } from "express";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isPrincipal, isCreator, getUserIdFromRequest } from "./replitAuth";
 import { randomBytes } from "crypto";
+import { readFileSync } from "fs";
+import { join } from "path";
+
+// Read version from package.json
+const packageJson = JSON.parse(
+  readFileSync(join(import.meta.dirname, "..", "package.json"), "utf-8")
+);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
@@ -12,7 +19,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ 
       status: "ok", 
       timestamp: new Date().toISOString(),
-      version: "1.0.0",
+      version: packageJson.version,
       service: "School Performance Documentation System"
     });
   });
