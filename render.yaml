@@ -1,19 +1,30 @@
 services:
   - type: web
-    name: osint-lab-pro-v2
+    name: school-performance-system
     env: node
     plan: free
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
+      # بيئة التشغيل - يجب أن تكون production للنشر
       - key: NODE_ENV
         value: production
+      
+      # المنفذ - Render يضبطه تلقائياً لكن يمكن تحديده
       - key: PORT
         value: 3000
+      
+      # رابط قاعدة البيانات - مطلوب
+      # احصل على قاعدة بيانات مجانية من https://neon.tech
+      # الصيغة: postgresql://user:pass@host.neon.tech/dbname?sslmode=require
       - key: DATABASE_URL
         sync: false
+      
+      # مفتاح سري للجلسات - يتم توليده تلقائياً
       - key: SESSION_SECRET
         generateValue: true
+      
+      # إعدادات OpenID Connect (اختيارية - للمصادقة عبر Replit OAuth)
       - key: OPENID_CLIENT_ID
         sync: false
       - key: OPENID_CLIENT_SECRET
@@ -21,7 +32,24 @@ services:
       - key: OPENID_ISSUER
         sync: false
 
-# ملاحظة: يُفضل استخدام Neon Database بدلاً من PostgreSQL في Render
-# للحصول على أداء أفضل وميزات إضافية
-# قم بإنشاء قاعدة بيانات على https://neon.tech
-# وأضف رابط الاتصال في DATABASE_URL
+# ===============================================
+# دليل النشر السريع:
+# ===============================================
+# 
+# 1. إنشاء قاعدة بيانات:
+#    - قم بزيارة https://neon.tech
+#    - أنشئ مشروع جديد
+#    - انسخ Connection String
+#
+# 2. إضافة متغيرات البيئة في Render:
+#    - DATABASE_URL: الصق رابط قاعدة البيانات من Neon
+#    - SESSION_SECRET: سيتم توليده تلقائياً
+#    - NODE_ENV: production (محدد مسبقاً)
+#
+# 3. بعد النشر، شغل من Shell:
+#    npm run db:push
+#
+# 4. افتح التطبيق وابدأ الاستخدام!
+#
+# للمزيد من التفاصيل، راجع DEPLOYMENT.md
+# ===============================================
