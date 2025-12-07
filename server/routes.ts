@@ -3,9 +3,26 @@ import type { Express } from "express";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isPrincipal, isCreator, getUserIdFromRequest } from "./replitAuth";
 import { randomBytes } from "crypto";
+import { readFileSync } from "fs";
+import { join } from "path";
+
+// Read version from package.json
+const packageJson = JSON.parse(
+  readFileSync(join(import.meta.dirname, "..", "package.json"), "utf-8")
+);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
+  
+  // Health check endpoint - doesn't require database
+  app.get("/api/health", (_req, res) => {
+    res.json({ 
+      status: "ok", 
+      timestamp: new Date().toISOString(),
+      version: packageJson.version,
+      service: "School Performance Documentation System"
+    });
+  });
   
   // Custom login endpoint for role-based authentication
   app.post("/api/auth/login", async (req, res) => {
